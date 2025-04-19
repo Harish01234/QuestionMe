@@ -7,8 +7,8 @@ export interface IInterview {
     techstack: string[];
     type: string;
     _id?: mongoose.Types.ObjectId | string;
-    createdAt?: Date;
-    updatedAt?: Date;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
 }
 
 const interviewSchema = new Schema<IInterview>(
