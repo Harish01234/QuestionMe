@@ -8,6 +8,14 @@ import createfeedback from '@/lib/feedback';
 import { IInterview } from '@/models/Interviews';
 import { useSession } from 'next-auth/react';
 
+interface TranscriptEntry {
+  role: string;  // "Candidate" or "Interviewer"
+  content: string;
+}
+
+type Transcript = TranscriptEntry[];
+
+
 const baseInterviewer = {
   name: "Interviewer",
   firstMessage:
@@ -66,110 +74,98 @@ End the conversation on a polite and positive note.
 };
 
 const InterviewTaker = () => {
-
   const { data: session } = useSession();
-
   const params = useParams();
-  const id = params?.id;
-  console.log("Interview ID:", id);
-  
+  const id = params?.id as string;
+
   const [questions, setQuestions] = useState<string[]>([]);
-  const [interview, setinterview] = useState<IInterview>();
+  const [interview, setInterview] = useState<IInterview>();
   const [isInterviewActive, setIsInterviewActive] = useState(false);
   const [interviewStatus, setInterviewStatus] = useState('Not started');
-  const [transcripts, setTranscripts] = useState<string[]>([])
+  const [transcripts, setTranscripts] = useState<Transcript>([]);
 
-  // ✅ Fetch interview questions once
+
   useEffect(() => {
     if (!id) return;
 
-    fetch("http://localhost:3000/api/getinterviewbyid", {
+    fetch("/api/getinterviewbyid", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log(data.data.questions);
-        setQuestions(data.data.questions);
-        setinterview(data.data);
+        setQuestions(data.data.questions || []);
+        setInterview(data.data);
       })
       .catch((err) => console.error("Fetch error:", err));
   }, [id]);
 
-  // ✅ Handle Interview start
   const startInterview = async () => {
     try {
       await vapi.start(baseInterviewer as any, {
-        variableValues: {
-          questions,
-        },
+        variableValues: { questions },
       });
       setIsInterviewActive(true);
       setInterviewStatus('Interview in progress');
     } catch (error) {
-      console.log('VAPI start error:', error);
+      console.error('VAPI start error:', error);
       setInterviewStatus('Error starting interview');
     }
   };
 
-  // ✅ Handle Interview end
   const endInterview = () => {
     try {
       vapi.stop();
       setIsInterviewActive(false);
       setInterviewStatus('Interview ended');
-      createfeedback(transcripts,interview,session?.user?.id!).then((res) => console.log(res)).catch((err) => console.log(err));
+
+      if (session?.user?.id && interview) {
+        createfeedback(transcripts, interview, session.user.id)
+          .then((res) => console.log("Feedback created:", res))
+          .catch((err) => console.error("Feedback error:", err));
+      }
     } catch (error) {
-      console.log('VAPI end error:', error);
+      console.error('VAPI end error:', error);
     }
   };
 
-  // ✅ Setup listeners
   useEffect(() => {
     const handleMessage = (message: any) => {
-      console.log('VAPI message:', message)
+      console.log('VAPI message:', message);
 
       if (message.type === 'conversation-update' && Array.isArray(message.conversation)) {
-        const formattedTranscript: string[] = []
+        const updatedTranscript: Transcript = message.conversation.map((item: any) => ({
+          role: item.role === 'user' ? 'Candidate' : 'Interviewer',
+          content: item.content,
+        }));
 
-        message.conversation.forEach((item: any) => {
-          if (item.role === 'user') {
-            formattedTranscript.push(`User: ${item.content}`)
-          } else if (item.role === 'assistant') {
-            formattedTranscript.push(`Assistant: ${item.content}`)
-          }
-        })
-
-        setTranscripts(formattedTranscript)
+        setTranscripts(updatedTranscript);
       }
-    }
+    };
 
     const handleCallStart = () => {
-      console.log('Call has started.')
-      setInterviewStatus('Interview in progress')
-      setIsInterviewActive(true)
-    }
+      console.log('Call has started.');
+      setInterviewStatus('Interview in progress');
+      setIsInterviewActive(true);
+    };
 
     const handleCallEnd = () => {
-      console.log('Call has ended.')
-      setInterviewStatus('Interview ended')
-      setIsInterviewActive(false)
-    }
+      console.log('Call has ended.');
+      setInterviewStatus('Interview ended');
+      setIsInterviewActive(false);
+    };
 
-    vapi.on('message', handleMessage)
-    vapi.on('call-start', handleCallStart)
-    vapi.on('call-end', handleCallEnd)
+    vapi.on('message', handleMessage);
+    vapi.on('call-start', handleCallStart);
+    vapi.on('call-end', handleCallEnd);
 
     return () => {
-      vapi.removeAllListeners('message')
-      vapi.removeAllListeners('call-start')
-      vapi.removeAllListeners('call-end')
-    }
-  }, [])
-
+      vapi.removeAllListeners('message');
+      vapi.removeAllListeners('call-start');
+      vapi.removeAllListeners('call-end');
+    };
+  }, []);
 
   return (
     <div className="bg-second min-h-screen w-full flex flex-col items-center justify-center px-4 py-6">
@@ -206,6 +202,3 @@ const InterviewTaker = () => {
 };
 
 export default InterviewTaker;
-
-
-

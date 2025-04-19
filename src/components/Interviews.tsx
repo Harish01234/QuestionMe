@@ -11,7 +11,7 @@ const QuestionGrid: React.FC = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/genarate");
+        const res = await fetch("/api/genarate");
         const result = await res.json();
         console.log("API Response:", result); // Check API response
         if (result.success) {
