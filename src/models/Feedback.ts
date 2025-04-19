@@ -10,7 +10,7 @@ export interface IFeedback {
     userId: mongoose.Types.ObjectId;
     
     _id?: mongoose.Types.ObjectId;
-    createdAt?: Date;
+    createdAt?: Date ;
     updatedAt?: Date;
 }   
 

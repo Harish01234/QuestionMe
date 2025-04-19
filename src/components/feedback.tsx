@@ -15,7 +15,7 @@ interface Feedback {
   strengths: string[]
   areasForImprovement: string[]
   categoryScores: CategoryScores
-  createdAt: Date
+  createdAt: string | Date  // Accept either string or Date
 }
 
 const Feedbackall = () => {
@@ -75,9 +75,12 @@ const Feedbackall = () => {
     )
   }
 
-  const formatDate = (dateString: string): string => {
+  // Modified to accept either string or Date
+  const formatDate = (date: string | Date): string => {
     try {
-      const date = new Date(dateString)
+      // Convert to Date object if it's not already one
+      const dateObj = date instanceof Date ? date : new Date(date)
+      
       const options: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'short',
@@ -85,9 +88,10 @@ const Feedbackall = () => {
         hour: '2-digit',
         minute: '2-digit',
       }
-      return date.toLocaleDateString(undefined, options)
+      return dateObj.toLocaleDateString(undefined, options)
     } catch (error) {
-      return dateString
+      // If conversion fails, return the original value as string
+      return date instanceof Date ? date.toString() : date
     }
   }
 
