@@ -15,7 +15,7 @@ interface Feedback {
   strengths: string[]
   areasForImprovement: string[]
   categoryScores: CategoryScores
-  createdAt: string
+  createdAt: Date
 }
 
 const Feedbackall = () => {
