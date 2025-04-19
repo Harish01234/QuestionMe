@@ -4,6 +4,9 @@ import { useParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { vapi } from '@/lib/vapi';
+import createfeedback from '@/lib/feedback';
+import { IInterview } from '@/models/Interviews';
+import { useSession } from 'next-auth/react';
 
 const baseInterviewer = {
   name: "Interviewer",
@@ -63,11 +66,18 @@ End the conversation on a polite and positive note.
 };
 
 const InterviewTaker = () => {
+
+  const { data: session } = useSession();
+
   const params = useParams();
   const id = params?.id;
+  console.log("Interview ID:", id);
+  
   const [questions, setQuestions] = useState<string[]>([]);
+  const [interview, setinterview] = useState<IInterview>();
   const [isInterviewActive, setIsInterviewActive] = useState(false);
   const [interviewStatus, setInterviewStatus] = useState('Not started');
+  const [transcripts, setTranscripts] = useState<string[]>([])
 
   // ✅ Fetch interview questions once
   useEffect(() => {
@@ -84,6 +94,7 @@ const InterviewTaker = () => {
       .then((data) => {
         console.log(data.data.questions);
         setQuestions(data.data.questions);
+        setinterview(data.data);
       })
       .catch((err) => console.error("Fetch error:", err));
   }, [id]);
@@ -110,6 +121,7 @@ const InterviewTaker = () => {
       vapi.stop();
       setIsInterviewActive(false);
       setInterviewStatus('Interview ended');
+      createfeedback(transcripts,interview,session?.user?.id!).then((res) => console.log(res)).catch((err) => console.log(err));
     } catch (error) {
       console.log('VAPI end error:', error);
     }
@@ -117,23 +129,47 @@ const InterviewTaker = () => {
 
   // ✅ Setup listeners
   useEffect(() => {
-    vapi.on("call-start", () => {
-      console.log("Call has started.");
-      setInterviewStatus('Interview in progress');
-      setIsInterviewActive(true);
-    });
+    const handleMessage = (message: any) => {
+      console.log('VAPI message:', message)
 
-    vapi.on("call-end", () => {
-      console.log("Call has ended.");
-      setInterviewStatus('Interview ended');
-      setIsInterviewActive(false);
-    });
+      if (message.type === 'conversation-update' && Array.isArray(message.conversation)) {
+        const formattedTranscript: string[] = []
+
+        message.conversation.forEach((item: any) => {
+          if (item.role === 'user') {
+            formattedTranscript.push(`User: ${item.content}`)
+          } else if (item.role === 'assistant') {
+            formattedTranscript.push(`Assistant: ${item.content}`)
+          }
+        })
+
+        setTranscripts(formattedTranscript)
+      }
+    }
+
+    const handleCallStart = () => {
+      console.log('Call has started.')
+      setInterviewStatus('Interview in progress')
+      setIsInterviewActive(true)
+    }
+
+    const handleCallEnd = () => {
+      console.log('Call has ended.')
+      setInterviewStatus('Interview ended')
+      setIsInterviewActive(false)
+    }
+
+    vapi.on('message', handleMessage)
+    vapi.on('call-start', handleCallStart)
+    vapi.on('call-end', handleCallEnd)
 
     return () => {
-      vapi.removeAllListeners("call-start");
-      vapi.removeAllListeners("call-end");
-    };
-  }, [id]);
+      vapi.removeAllListeners('message')
+      vapi.removeAllListeners('call-start')
+      vapi.removeAllListeners('call-end')
+    }
+  }, [])
+
 
   return (
     <div className="bg-second min-h-screen w-full flex flex-col items-center justify-center px-4 py-6">
@@ -170,3 +206,6 @@ const InterviewTaker = () => {
 };
 
 export default InterviewTaker;
+
+
+

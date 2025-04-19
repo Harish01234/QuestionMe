@@ -8,12 +8,13 @@ export interface IFeedback {
     strengths: string[];
     totalScore: number;
     userId: mongoose.Types.ObjectId;
+    
     _id?: mongoose.Types.ObjectId;
     createdAt?: Date;
     updatedAt?: Date;
 }   
 
-const feedbackSchema = new Schema<IFeedback>(
+export  const  feedbackSchema = new Schema<IFeedback>(
     {
         areasForImprovement: { type: [String], required: true },
         categoryScores: { type: Object, required: true },
@@ -21,7 +22,8 @@ const feedbackSchema = new Schema<IFeedback>(
         interviewId: { type: Schema.Types.ObjectId, required: true },
         strengths: { type: [String], required: true },      
         totalScore: { type: Number, required: true },
-        userId: { type: Schema.Types.ObjectId, required: true },        
+        userId: { type: Schema.Types.ObjectId, required: true },   
+             
     },
     { timestamps: true }    
 );
