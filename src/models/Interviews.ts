@@ -6,7 +6,7 @@ export interface IInterview {
     role: string;
     techstack: string[];
     type: string;
-    _id?: mongoose.Types.ObjectId;
+    _id?: mongoose.Types.ObjectId | string;
     createdAt?: Date;
     updatedAt?: Date;
 }

@@ -74,5 +74,19 @@ export async function POST(request: Request) {
 
 
 export async function GET() {
+
+    try {
+        connectToDatabase();
+        const interviews = await Interviews.find();
+        return NextResponse.json({ success: true, data: interviews });
+    } catch (error) {
+        console.error("Error fetching interviews:", error);
+        return NextResponse.json(
+            { success: false, error: error instanceof Error ? error.message : error },
+            { status: 500 }
+        );
+        
+    }
+
     return NextResponse.json({ success: true, message: "API is up and running!" });
   }
