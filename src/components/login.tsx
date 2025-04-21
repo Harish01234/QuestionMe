@@ -25,12 +25,20 @@ export default function Login() {
         redirect: false,
       });
 
+      console.log("Login result:", result);
+
+      if (result?.ok) {
+        router.push("/interviews");
+        return;
+      }
+      
+
       if (!result || result.error) {
         setMessage(result?.error || "Login failed");
         return;
       }
 
-      router.push("/interviews");
+      // router.push("/interviews");
     } catch (err) {
       setMessage("Something went wrong");
     } finally {
