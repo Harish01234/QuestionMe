@@ -23,15 +23,16 @@ export default function Login() {
         email,
         password,
         redirect: false,
-        callbackUrl: "/interviews",
       });
 
       console.log("Login result:", result);
 
-      if (result?.ok && result.url) {
-        router.push(result.url); // use result.url not a hardcoded path
-        return;
+
+       if (!result?.error) {
+        router.push("/auth");
       }
+
+      router.push("/interviews");
       
       
 
