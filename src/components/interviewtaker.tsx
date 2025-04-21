@@ -183,7 +183,7 @@ const InterviewTaker = () => {
           onClick={startInterview}
           className="bg-third text-white font-medium rounded-full px-6 py-3 hover:scale-105 transition-transform duration-300 shadow-md"
         >
-          Generate Interview
+          Start Interview
         </button>
       ) : (
         <button
