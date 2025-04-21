@@ -27,22 +27,16 @@ export default function Login() {
 
       console.log("Login result:", result);
 
-
-       if (!result?.error) {
-        router.push("/auth");
-      }
-
-      router.push("/interviews");
-      
-      
-
       if (!result || result.error) {
         setMessage(result?.error || "Login failed");
         return;
       }
 
-      // router.push("/interviews");
+      // Redirect on successful login
+      window.location.href = `${window.location.origin}/interviews`;
+      // router.push("/interviews"); // Alternative
     } catch (err) {
+      console.error("Login error:", err);
       setMessage("Something went wrong");
     } finally {
       setIsLoading(false);
